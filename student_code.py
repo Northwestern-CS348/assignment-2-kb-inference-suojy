@@ -116,7 +116,54 @@ class KnowledgeBase(object):
             print("Invalid ask:", fact.statement)
             return []
 
-    def kb_retract(self, fact_or_rule):
+    def remove(self, fact_rule):
+        if fact_rule.asserted == True:
+            return
+        if len(fact_rule.supports_facts) == 0 and  len(fact_rule.supports_rules) == 0 :
+            if isinstance(fact_rule, Fact):
+                self.facts.remove(fact_rule)
+                return
+            else:
+                self.rules.remove(fact_rule)
+                return
+        if isinstance(fact_rule, Fact):
+            for supports_fact in fact_rule.supports_facts:
+                for each in supports_fact.supported_by:
+                    if each[0] == fact_rule:
+                        supports_fact.supported_by.remove(each)
+                        each[1].supports_facts.remove(supports_fact)
+                    if supports_fact.supported_by == []:
+                        self.remove(supports_fact)
+            for supports_rule in fact_rule.supports_rules:
+                for each in supports_rule.supported_by:
+                    if each[0] == fact_rule:
+                        supports_rule.supported_by.remove(each)
+                        each[1].supports_rules.remove(supports_rule)
+                    if supports_rule.supported_by == []:
+                        self.remove(supports_rule)
+            fact_rule.supports_facts=[];
+            fact_rule.supports_rules=[];
+            self.facts.remove(fact_rule)
+        else:
+            for supports_fact in fact_rule.supports_facts:
+                for each in supports_fact.supported_by:
+                    if each[1] == fact_rule:
+                        supports_fact.supported_by.remove(each)
+                        each[0].supports_facts.remove(supports_fact)
+                    if supports_fact.supported_by == []:
+                        self.remove(supports_fact)
+            for supports_rule in fact_rule.supports_rules:
+                for each in supports_rule.supported_by:
+                    if each[1] == fact_rule:
+                        supports_rule.supported_by.remove(each)
+                        each[0].supports_rules.remove(supports_rule)
+                    if supports_rule.supported_by == []:
+                        self.remove(supports_rule)
+            fact_rule.supports_facts = [];
+            fact_rule.supports_rules = [];
+            self.rules.remove(fact_rule)
+
+    def kb_retract(self, fact_or_rule ):
         """Retract a fact from the KB
 
         Args:
@@ -128,7 +175,15 @@ class KnowledgeBase(object):
         printv("Retracting {!r}", 0, verbose, [fact_or_rule])
         ####################################################
         # Student code goes here
-        
+        if factq(fact_or_rule):
+            if fact_or_rule.asserted==True:
+                fact_rule = self._get_fact(fact_or_rule)
+                if fact_rule.supported_by!=[]:
+                    fact_rule.asserted = False
+                else:
+                    fact_rule.asserted = False
+                    self.remove(fact_rule)
+
 
 class InferenceEngine(object):
     def fc_infer(self, fact, rule, kb):
@@ -140,9 +195,26 @@ class InferenceEngine(object):
             kb (KnowledgeBase) - A KnowledgeBase
 
         Returns:
-            Nothing            
+            Nothing
         """
         printv('Attempting to infer from {!r} and {!r} => {!r}', 1, verbose,
             [fact.statement, rule.lhs, rule.rhs])
         ####################################################
         # Student code goes here
+        bindings = match(fact.statement, rule.lhs[0])
+        if bindings:
+            supported_by = [[fact, rule]]
+            new_rhs = instantiate(rule.rhs, bindings)
+            if len(rule.lhs) == 1:
+                new_fact = Fact(new_rhs, supported_by)
+                fact.supports_facts.append(new_fact)
+                rule.supports_facts.append(new_fact)
+                kb.kb_assert(new_fact)
+            else:
+                new_lhs = []
+                for statement in rule.lhs[1:]:
+                    new_lhs.append(instantiate(statement, bindings))
+                new_rule = Rule([new_lhs, new_rhs], supported_by)
+                fact.supports_rules.append(new_rule)
+                rule.supports_rules.append(new_rule)
+                kb.kb_assert(new_rule)
