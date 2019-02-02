@@ -141,8 +141,8 @@ class KnowledgeBase(object):
                         each[1].supports_rules.remove(supports_rule)
                     if supports_rule.supported_by == []:
                         self.remove(supports_rule)
-            fact_rule.supports_facts=[];
-            fact_rule.supports_rules=[];
+            fact_rule.supports_facts=[]
+            fact_rule.supports_rules=[]
             self.facts.remove(fact_rule)
         else:
             for supports_fact in fact_rule.supports_facts:
@@ -159,8 +159,8 @@ class KnowledgeBase(object):
                         each[0].supports_rules.remove(supports_rule)
                     if supports_rule.supported_by == []:
                         self.remove(supports_rule)
-            fact_rule.supports_facts = [];
-            fact_rule.supports_rules = [];
+            fact_rule.supports_facts = []
+            fact_rule.supports_rules = []
             self.rules.remove(fact_rule)
 
     def kb_retract(self, fact_or_rule ):
